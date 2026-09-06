@@ -266,6 +266,10 @@ public:
     {
         weekSchedule[day].push_back(session);
     }
+    vector<Session *> getSessionForDay(Day day)
+    {
+        return weekSchedule[day];
+    }
 };
 int main()
 {
