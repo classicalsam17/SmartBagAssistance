@@ -163,7 +163,10 @@ public:
     Student()
     {
         name = "";
-        rollNumber(""), branch(Branch::CSE),
-            batchName(""), semester(0)
+        rollnumber = "";
+        branch()
+            batchName(""),
+            semester(0)
     }
+    // hello sanchit
 };
