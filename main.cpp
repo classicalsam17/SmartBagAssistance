@@ -270,6 +270,16 @@ public:
     {
         return weekSchedule[day];
     }
+    void display()
+    {
+        for (pair<Day, vector<Session *>> entry : weekSchedule)
+        {
+            for (Session *s : entry.second)
+            {
+                s->display();
+            }
+        }
+    }
 };
 int main()
 {
