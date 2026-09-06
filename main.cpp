@@ -149,6 +149,7 @@ public:
              << "Room: " << roomNumber << endl;
     }
 };
+// Section 5: Student
 class Student
 {
 private:
@@ -159,14 +160,21 @@ private:
     int semester;
     // from Jagguu
 public:
-    // Constructors
-    Student()
+    Student(string Sname, string Srollnumber, Branch Sbranch, string Sbatchname, int Ssemester)
     {
-        name = "";
-        rollnumber = "";
-        branch()
-            batchName(""),
-            semester(0)
+        this->name = Sname;
+        this->rollnumber = Srollnumber;
+        this->branch = Sbranch;
+        this->batchname = Sbatchname;
+        this->semester = Ssemester;
     }
-    // hello sanchit
+    string getname();
+    string getRollNumber();
+    Branch getBranch();
+    string getBatchName();
+    int getSemester();
+    void setName(string);
+    void setBranch(Branch);
+    void setBatchName(string);
+    void setSemester(int);
 };
