@@ -1,9 +1,10 @@
 // The Microsoft Project--
 // Members: Sanchu, Sam, WaghoBa, Jaggi;
-
+// Basic typing
 #include <iostream>
 #include <string>
 #include <vector>
+#include <map>
 using namespace std;
 // Section 1 : Enum
 enum class Branch
@@ -33,6 +34,7 @@ enum class SessionType
     PRACTICAL
 };
 // Section 3 : Item
+// Encapsulation
 class Item
 {
 private:
@@ -52,11 +54,26 @@ public:
         this->name = Iname;
         this->category = Icategory;
     }
-    string getname(){
-        return name} string getcategory();
-    bool isitempacked();
-    void markPacked();
-    void markUnpacked();
+    string getname()
+    {
+        return name;
+    }
+    string getcategory()
+    {
+        return category;
+    }
+    bool isitempacked()
+    {
+        return isPacked;
+    }
+    void markPacked()
+    {
+        isPacked = true;
+    }
+    void markUnpacked()
+    {
+        isPacked = false;
+    }
     bool operator==(const Item &);
     friend ostream &operator<<(ostream &, const Item &);
 };
@@ -84,12 +101,25 @@ public:
     virtual vector<Item> getItemToCarry() = 0;
     virtual string getAlertMessage() = 0;
     virtual SessionType getType() = 0;
-    Day getDay();
-    string getStartTime();
-    string getSubjectName();
-    string getRoomNumber();
+    Day getDay()
+    {
+        return day;
+    }
+    string getStartTime()
+    {
+        return startTime;
+    }
+    string getSubjectName()
+    {
+        return subjectName;
+    }
+    string getRoomNumber()
+    {
+        return roomNumber;
+    }
     virtual void display() = 0;
 };
+// Inheritace and Polymorphism
 class Lecture : public Session
 {
 private:
@@ -152,6 +182,7 @@ public:
     }
 };
 // Section 5: Student
+// Encapsulation
 class Student
 {
 private:
@@ -160,7 +191,7 @@ private:
     Branch branch;
     string batchname;
     int semester;
-    // from Jagguu
+
 public:
     Student(string Sname, string Srollnumber, Branch Sbranch, string Sbatchname, int Ssemester)
     {
@@ -170,17 +201,73 @@ public:
         this->batchname = Sbatchname;
         this->semester = Ssemester;
     }
-    string getname();
-    string getRollNumber();
-    Branch getBranch();
-    string getBatchName();
-    int getSemester();
-    void setName(string);
-    void setBranch(Branch);
-    void setBatchName(string);
-    void setSemester(int);
+    string getname()
+    {
+        return name;
+    }
+    string getRollNumber()
+    {
+        return rollnumber;
+    }
+    Branch getBranch()
+    {
+        return branch;
+    }
+    string getBatchName()
+    {
+        return batchname;
+    }
+    int getSemester()
+    {
+        return semester;
+    }
+    void setName(string newName)
+    {
+        name = newName;
+    }
+    void setBranch(Branch newBranch)
+    {
+        branch = newBranch;
+    }
+    void setBatchName(string newBatchName)
+    {
+        batchname = newBatchName;
+    }
+    void setSemester(int newSemester)
+    {
+        semester = newSemester;
+    }
+
     friend ostream &operator<<(ostream &, const Student &);
 };
-class Timetable
+// Section:6 Time table ; uses Session*
+//  Composition
+//  the map's subscript operator, map indexing map access operator to be used
+class TimeTable
 {
+private:
+    map<Day, vector<Session *>> weekSchedule;
+
+public:
+    TimeTable()
+    {
+    }
+    ~TimeTable()
+    {
+        for (pair<Day, vector<Session *>> entry : weekSchedule)
+        {
+            for (Session *s : entry.second)
+            {
+                delete s;
+            }
+        }
+    }
+    void addSession(Day day, Session *session)
+    {
+        weekSchedule[day].push_back(session);
+    }
 };
+int main()
+{
+    return 0;
+}
