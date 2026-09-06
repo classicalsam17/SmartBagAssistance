@@ -43,7 +43,7 @@ private:
 public:
     Item()
     {
-        name = " ";
+        name = "";
         category = "";
         isPacked = false;
     }
@@ -52,11 +52,13 @@ public:
         this->name = Iname;
         this->category = Icategory;
     }
-    string getname();
-    string getcategory();
+    string getname(){
+        return name} string getcategory();
     bool isitempacked();
     void markPacked();
     void markUnpacked();
+    bool operator==(const Item &);
+    friend ostream &operator<<(ostream &, const Item &);
 };
 // Section 4 :Session Hierarchy (abstract class)
 // Abstract class is use for Lecture and Practical share a lot in common, but different parts that actually matter for your features
@@ -177,4 +179,8 @@ public:
     void setBranch(Branch);
     void setBatchName(string);
     void setSemester(int);
+    friend ostream &operator<<(ostream &, const Student &);
+};
+class Timetable
+{
 };
