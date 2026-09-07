@@ -77,6 +77,11 @@ public:
     bool operator==(const Item &);
     friend ostream &operator<<(ostream &, const Item &);
 };
+ostream &operator<<(ostream &os, const Item &item)
+{
+    os << item.getname() << "(" << item.getcategory() << ") - ";
+}
+
 // Section 4 :Session Hierarchy (abstract class)
 // Abstract class is use for Lecture and Practical share a lot in common, but different parts that actually matter for your features
 class Session
@@ -373,7 +378,7 @@ public:
         Bag bag = generatebagForDay(day);
         bag.display();
         vector<string> alert = getAlertsForDay(day);
-        for (string a : alerts)
+        for (string a : alert)
         {
             cout << a << endl;
         }
