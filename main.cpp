@@ -281,6 +281,104 @@ public:
         }
     }
 };
+// section 7 : Bag
+// Composition
+class Bag
+{
+private:
+    vector<Item> items;
+
+public:
+    Bag()
+    {
+    }
+    void addItem(Item newItem)
+    {
+        items.push_back(newItem);
+    }
+    void marksItemPacked(string itemName)
+    {
+        for (Item &i : items)
+        {
+            if (i.getname() == itemName)
+            {
+                i.markPacked();
+            }
+        }
+    }
+    vector<Item> getPendingItems()
+    {
+        vector<Item> pendingItems;
+        for (Item &i : items)
+        {
+            if (!i.isitempacked())
+            {
+                pendingItems.push_back(i);
+            }
+        }
+        return pendingItems;
+    }
+    vector<Item> getAllItems()
+    {
+        return items;
+    }
+    void display()
+    {
+        for (Item i : items)
+        {
+            cout << i << endl;
+        }
+    }
+};
+// Section 8 - BagManager
+class BagManager
+{
+private:
+    TimeTable *timeTable;
+    Student *student;
+
+public:
+    BagManager(TimeTable *Btimetable, Student *Bstudent)
+    {
+        this->timeTable = Btimetable;
+        this->student = Bstudent;
+    }
+    Bag generatebagForDay(Day day)
+    {
+        vector<Session *> todaySessions = timeTable->getSessionForDay(day);
+        Bag bag;
+
+        for (Session *s : todaySessions)
+        {
+            vector<Item> requiredItem = s->getItemToCarry();
+            for (Item i : requiredItem)
+            {
+                bag.addItem(i);
+            }
+        }
+        return bag;
+    }
+    vector<string> getAlertsForDay(Day day)
+    {
+        vector<Session *> todaySessions = timeTable->getSessionForDay(day);
+        vector<string> alerts;
+        for (Session *s : todaySessions)
+        {
+            alerts.push_back(s->getAlertMessage());
+        }
+        return alerts;
+    }
+    void displayTodaySummary(Day day)
+    {
+        Bag bag = generatebagForDay(day);
+        bag.display();
+        vector<string> alert = getAlertsForDay(day);
+        for (string a : alerts)
+        {
+            cout << a << endl;
+        }
+    }
+};
 int main()
 {
     return 0;
