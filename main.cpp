@@ -54,15 +54,15 @@ public:
         this->name = Iname;
         this->category = Icategory;
     }
-    string getname()
+    string getname() const
     {
         return name;
     }
-    string getcategory()
+    string getcategory() const
     {
         return category;
     }
-    bool isitempacked()
+    bool isitempacked() const
     {
         return isPacked;
     }
@@ -80,6 +80,15 @@ public:
 ostream &operator<<(ostream &os, const Item &item)
 {
     os << item.getname() << "(" << item.getcategory() << ") - ";
+    if (item.isitempacked())
+    {
+        os << "Packed";
+    }
+    else
+    {
+        os << "Not Packed";
+    }
+    return os;
 }
 
 // Section 4 :Session Hierarchy (abstract class)
@@ -386,5 +395,8 @@ public:
 };
 int main()
 {
-    return 0;
+    Student S("Samarth", "32", Branch::CO, "Computer Engineering", 3);
+    TimeTable T;
+    vector<Item> mathItems;
+    mathItems.push_back(Item(Tex), ) return 0;
 }
