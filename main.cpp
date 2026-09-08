@@ -398,5 +398,11 @@ int main()
     Student S("Samarth", "32", Branch::CO, "Computer Engineering", 3);
     TimeTable T;
     vector<Item> mathItems;
-    mathItems.push_back(Item(Tex), ) return 0;
+    mathItems.push_back(Item("Notebook", "Stationery"));
+    mathItems.push_back(Item("TextBook", "Book"));
+    Session *mathlecture = new Lecture(Day::MONDAY, "10:00", "Math", "Room 101", mathItems);
+    T.addSession(Day::MONDAY, mathlecture);
+    vector<Item> OOPItems;
+
+    return 0;
 }
