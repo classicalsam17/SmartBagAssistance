@@ -402,7 +402,22 @@ int main()
     mathItems.push_back(Item("TextBook", "Book"));
     Session *mathlecture = new Lecture(Day::MONDAY, "10:00", "Math", "Room 101", mathItems);
     T.addSession(Day::MONDAY, mathlecture);
-    vector<Item> OOPItems;
+    vector<Item> oopItems;
+    oopItems.push_back(Item("Lab Manual", "Book"));
+    oopItems.push_back(Item("Lab Notebook", "Staitionary"));
+    Session *oopPractical = new Practical(Day::MONDAY, "14:00", "OOP", "Lab 1", oopItems, 30);
+    T.addSession(Day::MONDAY, oopPractical);
+    BagManager manager(&T, &S);
+    manager.displayTodaySummary((Day::MONDAY));
+    int choice;
+    cout << "Enter number for Branch One of them:" << endl
+         << "1. Computer Engineering" << endl
+         << "2.Computer Technology" << endl
+         << "3.Electronics And Telecomunication" << endl
+         << "4.Electrical Engineering" << endl
+         << "5.Mechanical Engineering" << endl
+         << "6.Instrumention Engineering" << endl
+         << "7.Production Engineering"
 
-    return 0;
+        return 0;
 }
