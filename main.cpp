@@ -51,6 +51,7 @@ public:
     }
     Item(string Iname, string Icategory)
     {
+        isPacked = false;
         this->name = Iname;
         this->category = Icategory;
     }
@@ -393,31 +394,234 @@ public:
         }
     }
 };
+string getBranchName(Branch b)
+{
+
+    switch (b)
+    {
+    case Branch::CO:
+        return "Computer Engineering";
+    case Branch::CM:
+        return "Computer Technology";
+    case Branch::EJ:
+        return "Electronics and Telecommunication Engineering";
+    case Branch::EE:
+        return "Electrical Engineering";
+    case Branch::ME:
+        return "Mechanical Engineering";
+    case Branch::IS:
+        return "Instrumentation Engineering";
+    case Branch::PG:
+        return "Production Engineering";
+    case Branch::CE:
+        return "Civil Engineering";
+    }
+    return "Unkown";
+}
 int main()
 {
-    Student S("Samarth", "32", Branch::CO, "Computer Engineering", 3);
-    TimeTable T;
-    vector<Item> mathItems;
-    mathItems.push_back(Item("Notebook", "Stationery"));
-    mathItems.push_back(Item("TextBook", "Book"));
-    Session *mathlecture = new Lecture(Day::MONDAY, "10:00", "Math", "Room 101", mathItems);
-    T.addSession(Day::MONDAY, mathlecture);
-    vector<Item> oopItems;
-    oopItems.push_back(Item("Lab Manual", "Book"));
-    oopItems.push_back(Item("Lab Notebook", "Staitionary"));
-    Session *oopPractical = new Practical(Day::MONDAY, "14:00", "OOP", "Lab 1", oopItems, 30);
-    T.addSession(Day::MONDAY, oopPractical);
-    BagManager manager(&T, &S);
-    manager.displayTodaySummary((Day::MONDAY));
-    int choice;
-    cout << "Enter number for Branch One of them:" << endl
-         << "1. Computer Engineering" << endl
-         << "2.Computer Technology" << endl
-         << "3.Electronics And Telecomunication" << endl
-         << "4.Electrical Engineering" << endl
-         << "5.Mechanical Engineering" << endl
-         << "6.Instrumention Engineering" << endl
-         << "7.Production Engineering"
+    Student *studentPtr = nullptr;
+    TimeTable *timeTablePtr = nullptr;
+    while (true)
+    {
+        cout << "Enter Your Choice:" << endl;
+        cout << "1. Setup Profile" << endl
+             << "2. Setup Timetable" << endl
+             << "3. Show Todays's Bag" << endl
+             << "4. Mark Item Packed" << endl
+             << "5. EXIT" << endl;
+        int choice;
+        cin >> choice;
+        switch (choice)
+        {
+        case 1:
+        {
 
-        return 0;
+            cout << "Enter Your Name: ";
+            string name;
+            getline(cin, name);
+            cout << "Enter Your Roll Number: ";
+            string rollnumber;
+            cin >> rollnumber;
+            cout << "Enter Your Branch: " << endl;
+            cout << "Enter a number for Your Branch: " << endl;
+            cout << "1. Computer Engineering" << endl
+                 << "2.Computer Technology" << endl
+                 << "3.Electronics And Telecomunication" << endl
+                 << "4.Electrical Engineering" << endl
+                 << "5.Mechanical Engineering" << endl
+                 << "6.Instrumention Engineering" << endl
+                 << "7.Production Engineering" << endl
+                 << "8. Civil Engineering" << endl;
+            int choiceB;
+            cin >> choiceB;
+            Branch selectedBranch;
+            if (choiceB == 1)
+            {
+                selectedBranch = Branch::CO;
+            }
+            else if (choiceB == 2)
+            {
+                selectedBranch = Branch::CM;
+            }
+            else if (choiceB == 3)
+            {
+                selectedBranch = Branch::EJ;
+            }
+            else if (choiceB == 4)
+            {
+                selectedBranch = Branch::EE;
+            }
+            else if (choiceB == 5)
+            {
+                selectedBranch = Branch::ME;
+            }
+            else if (choiceB == 6)
+            {
+                selectedBranch = Branch::IS;
+            }
+            else if (choiceB == 7)
+            {
+                selectedBranch = Branch::PG;
+            }
+
+            else if (choiceB == 8)
+            {
+                selectedBranch = Branch::CE;
+            }
+            else
+            {
+                cout << "Enter Correct Choice! " << endl;
+            }
+            cin.ignore();
+            int semester;
+            string batchname = getBranchName(selectedBranch);
+            cout << "Enter Your Current Semester: 1/2/3/4/5/6" << endl;
+            cin >> semester;
+            studentPtr = new Student(name, rollnumber, selectedBranch, batchname, semester);
+            break;
+        }
+        case 2:
+        {
+            timeTablePtr = new TimeTable();
+            int choiceD;
+            cout << "Enter Choice for Current Day: " << endl
+                 << "1. MONDAY" << endl
+                 << "2. TUESDAY" << endl
+                 << "3. WEDNESDAY" << endl
+                 << "4. THURSDAY" << endl
+                 << "5. FRIDAY" << endl
+                 << "6. SATURDAY" << endl
+                 << "7. SUNDAY" << endl;
+            Day sessionDay;
+            cin >> choiceD;
+            if (choiceD == 1)
+            {
+                sessionDay = Day::MONDAY;
+            }
+            else if (choiceD == 2)
+            {
+                sessionDay = Day::TUESDAY;
+            }
+            else if (choiceD == 3)
+            {
+                sessionDay = Day::WEDNESDAY;
+            }
+            else if (choiceD == 4)
+            {
+                sessionDay = Day::THURSDAY;
+            }
+            else if (choiceD == 5)
+            {
+                sessionDay = Day::FRIDAY;
+            }
+            else if (choiceD == 6)
+            {
+                sessionDay = Day::SATURDAY;
+            }
+            else if (choiceD == 7)
+            {
+                sessionDay = Day::SUNDAY;
+            }
+            else
+            {
+                cout << "Invalid Choice!" << endl;
+            }
+            int typeChoice;
+            cout << "Enter Choice for 1. Lecture / 2. Practical: " << endl;
+            cin >> typeChoice;
+            if (typeChoice == 1)
+            {
+                string subjectName;
+                cout << "Enter Subject Name of Lecture: " << endl;
+                cin.ignore();
+                getline(cin, subjectName);
+                string startTime;
+                cout << "Enter Start Time of Lecture For Subject: " << endl;
+                getline(cin, startTime);
+                string roomNumber;
+                cout << "Enter Room Number of Lecture: " << endl;
+                getline(cin, roomNumber);
+                vector<Item> defaultItems;
+
+                cout << "How many Items you want to add?" << endl;
+                int itemCount;
+                cin >> itemCount;
+                cin.ignore();
+                for (int i = 0; i < itemCount; i++)
+                {
+                    string itemName;
+                    cout << "Enter Item Name: " << endl;
+                    getline(cin, itemName);
+                    string itemCategory;
+                    getline(cin, itemCategory);
+                    Item newItem(itemName, itemCategory);
+                    defaultItems.push_back(newItem);
+                }
+                Lecture *newLecture = new Lecture(sessionDay, startTime, subjectName, roomNumber, defaultItems);
+                timeTablePtr->addSession(sessionDay, newLecture);
+            }
+            else if (typeChoice == 2)
+            {
+                string subjectName;
+                cout << "Enter Subject Name of Practical: " << endl;
+                cin.ignore();
+                getline(cin, subjectName);
+                string startTime;
+                cout << "Enter Start Time of Lecture For Subject: " << endl;
+                getline(cin, startTime);
+                string roomNumber;
+                cout << "Enter Room Number of Lecture: " << endl;
+                getline(cin, roomNumber);
+                string labItemName;
+                cout << "Enter Lab Item: " << endl;
+                getline(cin, labItemName);
+                string labItemCategory;
+                cout << "Enter Lab Item Category: " << endl;
+                getline(cin, labItemCategory);
+                Item labItem(labItemName, labItemCategory);
+                int alertLeadMinutes;
+                cout << "Enter Alert Lead Minutes: " << endl;
+                cin >> alertLeadMinutes;
+                Practical *newPractical = new Practical(sessionDay, startTime, subjectName, roomNumber, labItem, alertLeadMinutes);
+            }
+            else
+            {
+                cout << "Invalid Choice!" << endl;
+            }
+            break;
+        }
+        case 3:
+            cout << "Option 3 is Selected" << endl;
+            break;
+        case 4:
+            cout << "Option 4 is Selected" << endl;
+            break;
+        case 5:
+            cout << "Option 5 is Selected" << endl;
+            return 0;
+        }
+    }
+
+    return 0;
 }
