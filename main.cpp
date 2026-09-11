@@ -684,8 +684,12 @@ int main()
             else
             {
                 BagManager manager(timeTablePtr, studentPtr);
-                bagPtr = new Bag(manager.generatebagForDay(sessionDay));
+                if (bagPtr == nullptr)
+                {
+                    bagPtr = new Bag(manager.generatebagForDay(sessionDay));
+                }
                 bagPtr->display();
+
                 vector<string> alerts = manager.getAlertsForDay(sessionDay);
                 for (string a : alerts)
                 {
