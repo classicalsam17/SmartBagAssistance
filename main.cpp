@@ -431,7 +431,8 @@ int main()
              << "2. Setup Timetable" << endl
              << "3. Show Todays's Bag" << endl
              << "4. Mark Item Packed" << endl
-             << "5. EXIT" << endl;
+             << "5. Add Item To Bag" << endl
+             << "6. EXIT" << endl;
         int choice;
         cin >> choice;
 
@@ -719,8 +720,23 @@ int main()
             }
             break;
         }
-
         case 5:
+        {
+            if (bagPtr == nullptr)
+            {
+                cout << "Please view today's bag first (option 3) before adding items!" << endl;
+            }
+            else
+            {
+                cout << "Enter Item Name and Category: " << endl;
+
+                string itemName;
+                cin.ignore();
+                getline(cin, itemName);
+            }
+        }
+
+        case 6:
             cout << "Program successfully Ended!" << endl;
             return 0;
         }
