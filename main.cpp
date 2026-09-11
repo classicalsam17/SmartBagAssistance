@@ -394,7 +394,28 @@ public:
         }
     }
 };
-string getBranchName(Branch b)
+class FileNotFoundException : public exception
+{
+private:
+    string message;
+
+public:
+    FileNotFoundException(string Fmessage)
+    {
+        message = Fmessage;
+    }
+    const char *what() const noexcept
+    {
+        return message.c_str();
+    }
+};
+class InvalidSessionDataException : public exception
+{
+private:
+    string message;
+
+public:
+} string getBranchName(Branch b)
 {
 
     switch (b)
@@ -728,12 +749,24 @@ int main()
             }
             else
             {
-                cout << "Enter Item Name and Category: " << endl;
-
-                string itemName;
+                int choice;
+                cout << "How Many Item you want to add?" << endl;
+                cin >> choice;
                 cin.ignore();
-                getline(cin, itemName);
+
+                for (int i = 0; i < choice; i++)
+                {
+                    cout << "Enter Item Name and Category: " << endl;
+
+                    string itemName;
+                    string category;
+                    getline(cin, itemName);
+                    getline(cin, category);
+                    Item newItem(itemName, category);
+                    bagPtr->addItem(newItem);
+                }
             }
+            break;
         }
 
         case 6:
