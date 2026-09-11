@@ -5,6 +5,8 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <fstream>
+
 using namespace std;
 // Section 1 : Enum
 enum class Branch
@@ -195,6 +197,10 @@ public:
              << "Time: " << startTime << endl
              << "Room: " << roomNumber << endl;
     }
+    int getAlertLeadMinutes()
+    {
+        return alertLeadMinutes;
+    }
 };
 // Section 5: Student
 // Encapsulation
@@ -295,6 +301,10 @@ public:
             }
         }
     }
+    map<Day, vector<Session *>> getAllSessions()
+    {
+        return weekSchedule;
+    }
 };
 // section 7 : Bag
 // Composition
@@ -394,6 +404,7 @@ public:
         }
     }
 };
+// Exception
 class FileNotFoundException : public exception
 {
 private:
@@ -415,7 +426,181 @@ private:
     string message;
 
 public:
-} string getBranchName(Branch b)
+    InvalidSessionDataException(string Imessage)
+    {
+        message = Imessage;
+    }
+    const char *what() const noexcept
+    {
+        return message.c_str();
+    }
+};
+// File Handling
+class FileHandler
+{
+public:
+    void saveStudent(Student *studentPtr)
+    {
+        string filename = "student_" + studentPtr->getRollNumber() + ".txt";
+        ofstream file(filename);
+        if (!file)
+        {
+            throw FileNotFoundException("Unable to open student file!");
+        }
+        file << studentPtr->getname() << endl;
+        file << studentPtr->getRollNumber() << endl;
+        file << static_cast<int>(studentPtr->getBranch()) << endl;
+        file << studentPtr->getBatchName() << endl;
+        file << studentPtr->getSemester() << endl;
+        file.close();
+    }
+    void saveTimeTable(TimeTable *timeTablePtr, Student *studentPtr)
+    {
+        string filename = "timetable_" + studentPtr->getRollNumber() + ".txt";
+        ofstream file(filename);
+        if (!file)
+        {
+            throw FileNotFoundException("Unable to Open TimeTable File!");
+        }
+        map<Day, vector<Session *>> allSessions = timeTablePtr->getAllSessions();
+        for (pair<Day, vector<Session *>> entry : allSessions)
+        {
+            for (Session *s : entry.second)
+            {
+                file << static_cast<int>(s->getDay()) << endl;
+                file << static_cast<int>(s->getType()) << endl;
+                file << s->getStartTime() << endl;
+                file << s->getSubjectName() << endl;
+                file << s->getRoomNumber() << endl;
+                vector<Item> items = s->getItemToCarry();
+
+                file << items.size() << endl;
+
+                for (Item item : items)
+                {
+                    file << item.getname() << endl;
+                    file << item.getcategory() << endl;
+                }
+                if (s->getType() == SessionType::PRACTICAL)
+                {
+                    Practical *practical = dynamic_cast<Practical *>(s);
+                    file << practical->getAlertLeadMinutes() << endl;
+                }
+            }
+        }
+    }
+    Student *loadStudent(string rollNumber)
+    {
+        string filename = "student_" + rollNumber + ".txt";
+
+        ifstream file(filename);
+
+        if (!file)
+        {
+            throw FileNotFoundException("Student data not found!");
+        }
+
+        string name;
+        string savedRollNumber;
+        int branchValue;
+        string batchname;
+        int semester;
+
+        getline(file, name);
+        getline(file, savedRollNumber);
+
+        file >> branchValue;
+        file.ignore();
+
+        getline(file, batchname);
+        file >> semester;
+
+        file.close();
+
+        Branch branch = static_cast<Branch>(branchValue);
+
+        return new Student(name, savedRollNumber, branch, batchname, semester);
+    }
+    void loadTimeTable(TimeTable *timeTablePtr, string rollNumber)
+    {
+        string filename = "timetable_" + rollNumber + ".txt";
+
+        ifstream file(filename);
+
+        if (!file)
+        {
+            throw FileNotFoundException("Timetable data not found!");
+        }
+
+        int dayValue;
+        int typeValue;
+
+        while (file >> dayValue)
+        {
+            file >> typeValue;
+            file.ignore();
+
+            string startTime;
+            string subjectName;
+            string roomNumber;
+
+            getline(file, startTime);
+            getline(file, subjectName);
+            getline(file, roomNumber);
+
+            int itemCount;
+            file >> itemCount;
+            file.ignore();
+
+            vector<Item> items;
+
+            for (int i = 0; i < itemCount; i++)
+            {
+                string itemName;
+                string category;
+
+                getline(file, itemName);
+                getline(file, category);
+
+                items.push_back(Item(itemName, category));
+            }
+
+            Day day = static_cast<Day>(dayValue);
+            SessionType type = static_cast<SessionType>(typeValue);
+
+            if (type == SessionType::LECTURE)
+            {
+                Session *session = new Lecture(
+                    day,
+                    startTime,
+                    subjectName,
+                    roomNumber,
+                    items);
+
+                timeTablePtr->addSession(day, session);
+            }
+            else if (type == SessionType::PRACTICAL)
+            {
+                int alertLeadMinutes;
+                file >> alertLeadMinutes;
+                file.ignore();
+
+                Session *session = new Practical(
+                    day,
+                    startTime,
+                    subjectName,
+                    roomNumber,
+                    items,
+                    alertLeadMinutes);
+
+                timeTablePtr->addSession(day, session);
+            }
+        }
+
+        file.close();
+    }
+};
+string getBranchName(Branch b)
 {
 
     switch (b)
@@ -439,218 +624,288 @@ public:
     }
     return "Unkown";
 }
+int showLoginPage()
+{
+    int Choice;
+    cout << "Login Page" << endl;
+    cout << "Enter your Choice: " << endl;
+    cout << "1. New User" << endl
+         << "2.Existing" << endl
+         << "3.Exit" << endl;
+    cin >> Choice;
+    return Choice;
+}
+void setupProfile(Student *&studentPtr)
+{
+    cin.ignore();
+    cout << "Enter Your Name: ";
+    string name;
+    getline(cin, name);
+    cout << "Enter Your Roll Number: ";
+    string rollnumber;
+    cin >> rollnumber;
+    cout << "Enter Your Branch: " << endl;
+    cout << "Enter a number for Your Branch: " << endl;
+    cout << "1. Computer Engineering" << endl
+         << "2.Computer Technology" << endl
+         << "3.Electronics And Telecomunication" << endl
+         << "4.Electrical Engineering" << endl
+         << "5.Mechanical Engineering" << endl
+         << "6.Instrumention Engineering" << endl
+         << "7.Production Engineering" << endl
+         << "8. Civil Engineering" << endl;
+    int choiceB;
+    cin >> choiceB;
+
+    Branch selectedBranch;
+    if (choiceB == 1)
+    {
+        selectedBranch = Branch::CO;
+    }
+    else if (choiceB == 2)
+    {
+        selectedBranch = Branch::CM;
+    }
+    else if (choiceB == 3)
+    {
+        selectedBranch = Branch::EJ;
+    }
+    else if (choiceB == 4)
+    {
+        selectedBranch = Branch::EE;
+    }
+    else if (choiceB == 5)
+    {
+        selectedBranch = Branch::ME;
+    }
+    else if (choiceB == 6)
+    {
+        selectedBranch = Branch::IS;
+    }
+    else if (choiceB == 7)
+    {
+        selectedBranch = Branch::PG;
+    }
+
+    else if (choiceB == 8)
+    {
+        selectedBranch = Branch::CE;
+    }
+    else
+    {
+        cout << "Enter Correct Choice! " << endl;
+    }
+    cin.ignore();
+    int semester;
+    string batchname = getBranchName(selectedBranch);
+    cout << "Enter Your Current Semester: 1/2/3/4/5/6" << endl;
+    cin >> semester;
+    studentPtr = new Student(name, rollnumber, selectedBranch, batchname, semester);
+}
+void setupTimeTable(TimeTable *&timeTablePtr)
+{
+    if (timeTablePtr == nullptr)
+    {
+        timeTablePtr = new TimeTable();
+    }
+
+    int choiceD;
+    cout << "Enter Choice for Current Day: " << endl
+         << "1. MONDAY" << endl
+         << "2. TUESDAY" << endl
+         << "3. WEDNESDAY" << endl
+         << "4. THURSDAY" << endl
+         << "5. FRIDAY" << endl
+         << "6. SATURDAY" << endl
+         << "7. SUNDAY" << endl;
+    Day sessionDay;
+    cin >> choiceD;
+    if (choiceD == 1)
+    {
+        sessionDay = Day::MONDAY;
+    }
+    else if (choiceD == 2)
+    {
+        sessionDay = Day::TUESDAY;
+    }
+    else if (choiceD == 3)
+    {
+        sessionDay = Day::WEDNESDAY;
+    }
+    else if (choiceD == 4)
+    {
+        sessionDay = Day::THURSDAY;
+    }
+    else if (choiceD == 5)
+    {
+        sessionDay = Day::FRIDAY;
+    }
+    else if (choiceD == 6)
+    {
+        sessionDay = Day::SATURDAY;
+    }
+    else if (choiceD == 7)
+    {
+        sessionDay = Day::SUNDAY;
+    }
+    else
+    {
+        cout << "Invalid Choice!" << endl;
+    }
+    int typeChoice;
+    cout << "Enter Choice for 1. Lecture / 2. Practical: " << endl;
+    cin >> typeChoice;
+    if (typeChoice == 1)
+    {
+        string subjectName;
+        cout << "Enter Subject Name of Lecture: " << endl;
+        cin.ignore();
+        getline(cin, subjectName);
+        string startTime;
+        cout << "Enter Start Time of Lecture For Subject: " << endl;
+        getline(cin, startTime);
+        string roomNumber;
+        cout << "Enter Room Number of Lecture: " << endl;
+        getline(cin, roomNumber);
+        vector<Item> defaultItems;
+
+        cout << "How many Items you want to add?" << endl;
+        int itemCount;
+        cin >> itemCount;
+        cin.ignore();
+        for (int i = 0; i < itemCount; i++)
+        {
+            string itemName;
+            cout << "Enter Item Name: " << endl;
+            getline(cin, itemName);
+            string itemCategory;
+            getline(cin, itemCategory);
+            Item newItem(itemName, itemCategory);
+            defaultItems.push_back(newItem);
+        }
+        Lecture *newLecture = new Lecture(sessionDay, startTime, subjectName, roomNumber, defaultItems);
+        timeTablePtr->addSession(sessionDay, newLecture);
+    }
+    else if (typeChoice == 2)
+    {
+        string subjectName;
+        cout << "Enter Subject Name of Practical: " << endl;
+        cin.ignore();
+        getline(cin, subjectName);
+        string startTime;
+        cout << "Enter Start Time of Lecture For Subject: " << endl;
+        getline(cin, startTime);
+        string roomNumber;
+        cout << "Enter Room Number of Lecture: " << endl;
+        getline(cin, roomNumber);
+        string labItemName;
+        vector<Item> defaultItem;
+        cout << "How many Items you want to add? " << endl;
+        int itemCount;
+        cin >> itemCount;
+        cin.ignore();
+        for (int i = 0; i < itemCount; i++)
+        {
+            cout << "Enter Lab Item: " << endl;
+            getline(cin, labItemName);
+            string labItemCategory;
+            cout << "Enter Lab Item Category: " << endl;
+            getline(cin, labItemCategory);
+            Item newItem(labItemName, labItemCategory);
+            defaultItem.push_back(newItem);
+        }
+
+        int alertLeadMinutes;
+        cout << "Enter Alert Lead Minutes: " << endl;
+        cin >> alertLeadMinutes;
+
+        Practical *newPractical = new Practical(sessionDay, startTime, subjectName, roomNumber, defaultItem, alertLeadMinutes);
+        timeTablePtr->addSession(sessionDay, newPractical);
+    }
+    else
+    {
+        cout << "Invalid Choice!" << endl;
+    }
+}
 int main()
 {
     Student *studentPtr = nullptr;
     TimeTable *timeTablePtr = nullptr;
     Bag *bagPtr = nullptr;
+    FileHandler fileHandeler;
+    int loginChoice = showLoginPage();
+    // login page
+    switch (loginChoice)
+    {
+    case 1:
+    {
+        cout << "New User" << endl;
+        setupProfile(studentPtr);
+        setupTimeTable(timeTablePtr);
+        fileHandeler.saveStudent(studentPtr);
+        fileHandeler.saveTimeTable(timeTablePtr, studentPtr);
+        break;
+    }
+    case 2:
+    {
+        cout << "Existing User" << endl;
+
+        string rollNumber;
+        cout << "Enter Roll Number: ";
+        cin >> rollNumber;
+
+        try
+        {
+            studentPtr = fileHandeler.loadStudent(rollNumber);
+
+            timeTablePtr = new TimeTable();
+            fileHandeler.loadTimeTable(timeTablePtr, rollNumber);
+
+            cout << "Login Successful!" << endl;
+            cout << "Welcome, " << studentPtr->getname() << "!" << endl;
+        }
+        catch (const FileNotFoundException &e)
+        {
+            cout << e.what() << endl;
+            return 0;
+        }
+
+        break;
+    }
+
+    case 3:
+        cout << "Exited!!" << endl;
+        return 0;
+    default:
+        cout << "Invalid choice" << endl;
+    }
 
     while (true)
     {
         cout << "Enter Your Choice:" << endl;
-        cout << "1. Setup Profile" << endl
-             << "2. Setup Timetable" << endl
-             << "3. Show Todays's Bag" << endl
+        cout << "1. Edit Profile" << endl
+             << "2. Edit Timetable" << endl
+             << "3. Show Today's Bag" << endl
              << "4. Mark Item Packed" << endl
              << "5. Add Item To Bag" << endl
-             << "6. EXIT" << endl;
+             << "6. Show Profile" << endl
+             << "7. Show Timetable" << endl
+             << "8. Save Data" << endl
+             << "9. Logout" << endl
+             << "10. EXIT" << endl;
         int choice;
         cin >> choice;
 
         switch (choice)
         {
-        case 1:
+        case 1: // Setup Profile
         {
-            cin.ignore();
-            cout << "Enter Your Name: ";
-            string name;
-            getline(cin, name);
-            cout << "Enter Your Roll Number: ";
-            string rollnumber;
-            cin >> rollnumber;
-            cout << "Enter Your Branch: " << endl;
-            cout << "Enter a number for Your Branch: " << endl;
-            cout << "1. Computer Engineering" << endl
-                 << "2.Computer Technology" << endl
-                 << "3.Electronics And Telecomunication" << endl
-                 << "4.Electrical Engineering" << endl
-                 << "5.Mechanical Engineering" << endl
-                 << "6.Instrumention Engineering" << endl
-                 << "7.Production Engineering" << endl
-                 << "8. Civil Engineering" << endl;
-            int choiceB;
-            cin >> choiceB;
-
-            Branch selectedBranch;
-            if (choiceB == 1)
-            {
-                selectedBranch = Branch::CO;
-            }
-            else if (choiceB == 2)
-            {
-                selectedBranch = Branch::CM;
-            }
-            else if (choiceB == 3)
-            {
-                selectedBranch = Branch::EJ;
-            }
-            else if (choiceB == 4)
-            {
-                selectedBranch = Branch::EE;
-            }
-            else if (choiceB == 5)
-            {
-                selectedBranch = Branch::ME;
-            }
-            else if (choiceB == 6)
-            {
-                selectedBranch = Branch::IS;
-            }
-            else if (choiceB == 7)
-            {
-                selectedBranch = Branch::PG;
-            }
-
-            else if (choiceB == 8)
-            {
-                selectedBranch = Branch::CE;
-            }
-            else
-            {
-                cout << "Enter Correct Choice! " << endl;
-            }
-            cin.ignore();
-            int semester;
-            string batchname = getBranchName(selectedBranch);
-            cout << "Enter Your Current Semester: 1/2/3/4/5/6" << endl;
-            cin >> semester;
-            studentPtr = new Student(name, rollnumber, selectedBranch, batchname, semester);
+            setupProfile(studentPtr);
             break;
         }
-        case 2:
+        case 2: // Setup Time Table
         {
-            if (timeTablePtr == nullptr)
-            {
-                timeTablePtr = new TimeTable();
-            }
 
-            int choiceD;
-            cout << "Enter Choice for Current Day: " << endl
-                 << "1. MONDAY" << endl
-                 << "2. TUESDAY" << endl
-                 << "3. WEDNESDAY" << endl
-                 << "4. THURSDAY" << endl
-                 << "5. FRIDAY" << endl
-                 << "6. SATURDAY" << endl
-                 << "7. SUNDAY" << endl;
-            Day sessionDay;
-            cin >> choiceD;
-            if (choiceD == 1)
-            {
-                sessionDay = Day::MONDAY;
-            }
-            else if (choiceD == 2)
-            {
-                sessionDay = Day::TUESDAY;
-            }
-            else if (choiceD == 3)
-            {
-                sessionDay = Day::WEDNESDAY;
-            }
-            else if (choiceD == 4)
-            {
-                sessionDay = Day::THURSDAY;
-            }
-            else if (choiceD == 5)
-            {
-                sessionDay = Day::FRIDAY;
-            }
-            else if (choiceD == 6)
-            {
-                sessionDay = Day::SATURDAY;
-            }
-            else if (choiceD == 7)
-            {
-                sessionDay = Day::SUNDAY;
-            }
-            else
-            {
-                cout << "Invalid Choice!" << endl;
-            }
-            int typeChoice;
-            cout << "Enter Choice for 1. Lecture / 2. Practical: " << endl;
-            cin >> typeChoice;
-            if (typeChoice == 1)
-            {
-                string subjectName;
-                cout << "Enter Subject Name of Lecture: " << endl;
-                cin.ignore();
-                getline(cin, subjectName);
-                string startTime;
-                cout << "Enter Start Time of Lecture For Subject: " << endl;
-                getline(cin, startTime);
-                string roomNumber;
-                cout << "Enter Room Number of Lecture: " << endl;
-                getline(cin, roomNumber);
-                vector<Item> defaultItems;
-
-                cout << "How many Items you want to add?" << endl;
-                int itemCount;
-                cin >> itemCount;
-                cin.ignore();
-                for (int i = 0; i < itemCount; i++)
-                {
-                    string itemName;
-                    cout << "Enter Item Name: " << endl;
-                    getline(cin, itemName);
-                    string itemCategory;
-                    getline(cin, itemCategory);
-                    Item newItem(itemName, itemCategory);
-                    defaultItems.push_back(newItem);
-                }
-                Lecture *newLecture = new Lecture(sessionDay, startTime, subjectName, roomNumber, defaultItems);
-                timeTablePtr->addSession(sessionDay, newLecture);
-            }
-            else if (typeChoice == 2)
-            {
-                string subjectName;
-                cout << "Enter Subject Name of Practical: " << endl;
-                cin.ignore();
-                getline(cin, subjectName);
-                string startTime;
-                cout << "Enter Start Time of Lecture For Subject: " << endl;
-                getline(cin, startTime);
-                string roomNumber;
-                cout << "Enter Room Number of Lecture: " << endl;
-                getline(cin, roomNumber);
-                string labItemName;
-                vector<Item> defaultItem;
-                cout << "How many Items you want to add? " << endl;
-                int itemCount;
-                cin >> itemCount;
-                cin.ignore();
-                for (int i = 0; i < itemCount; i++)
-                {
-                    cout << "Enter Lab Item: " << endl;
-                    getline(cin, labItemName);
-                    string labItemCategory;
-                    cout << "Enter Lab Item Category: " << endl;
-                    getline(cin, labItemCategory);
-                    Item newItem(labItemName, labItemCategory);
-                    defaultItem.push_back(newItem);
-                }
-
-                int alertLeadMinutes;
-                cout << "Enter Alert Lead Minutes: " << endl;
-                cin >> alertLeadMinutes;
-
-                Practical *newPractical = new Practical(sessionDay, startTime, subjectName, roomNumber, defaultItem, alertLeadMinutes);
-                timeTablePtr->addSession(sessionDay, newPractical);
-            }
-            else
-            {
-                cout << "Invalid Choice!" << endl;
-            }
             break;
         }
         case 3:
