@@ -422,6 +422,8 @@ int main()
 {
     Student *studentPtr = nullptr;
     TimeTable *timeTablePtr = nullptr;
+    Bag *bagPtr = nullptr;
+
     while (true)
     {
         cout << "Enter Your Choice:" << endl;
@@ -432,11 +434,12 @@ int main()
              << "5. EXIT" << endl;
         int choice;
         cin >> choice;
+
         switch (choice)
         {
         case 1:
         {
-
+            cin.ignore();
             cout << "Enter Your Name: ";
             string name;
             getline(cin, name);
@@ -455,6 +458,7 @@ int main()
                  << "8. Civil Engineering" << endl;
             int choiceB;
             cin >> choiceB;
+
             Branch selectedBranch;
             if (choiceB == 1)
             {
@@ -503,7 +507,11 @@ int main()
         }
         case 2:
         {
-            timeTablePtr = new TimeTable();
+            if (timeTablePtr == nullptr)
+            {
+                timeTablePtr = new TimeTable();
+            }
+
             int choiceD;
             cout << "Enter Choice for Current Day: " << endl
                  << "1. MONDAY" << endl
@@ -594,16 +602,28 @@ int main()
                 cout << "Enter Room Number of Lecture: " << endl;
                 getline(cin, roomNumber);
                 string labItemName;
-                cout << "Enter Lab Item: " << endl;
-                getline(cin, labItemName);
-                string labItemCategory;
-                cout << "Enter Lab Item Category: " << endl;
-                getline(cin, labItemCategory);
-                Item labItem(labItemName, labItemCategory);
+                vector<Item> defaultItem;
+                cout << "How many Items you want to add? " << endl;
+                int itemCount;
+                cin >> itemCount;
+                cin.ignore();
+                for (int i = 0; i < itemCount; i++)
+                {
+                    cout << "Enter Lab Item: " << endl;
+                    getline(cin, labItemName);
+                    string labItemCategory;
+                    cout << "Enter Lab Item Category: " << endl;
+                    getline(cin, labItemCategory);
+                    Item newItem(labItemName, labItemCategory);
+                    defaultItem.push_back(newItem);
+                }
+
                 int alertLeadMinutes;
                 cout << "Enter Alert Lead Minutes: " << endl;
                 cin >> alertLeadMinutes;
-                Practical *newPractical = new Practical(sessionDay, startTime, subjectName, roomNumber, labItem, alertLeadMinutes);
+
+                Practical *newPractical = new Practical(sessionDay, startTime, subjectName, roomNumber, defaultItem, alertLeadMinutes);
+                timeTablePtr->addSession(sessionDay, newPractical);
             }
             else
             {
@@ -612,11 +632,86 @@ int main()
             break;
         }
         case 3:
-            cout << "Option 3 is Selected" << endl;
+        {
+            Day sessionDay;
+            int choiceD;
+            cout << "Enter Choice for a Day You want? " << endl
+                 << "1. MONDAY" << endl
+                 << "2. TUESDAY" << endl
+                 << "3. WEDNESDAY" << endl
+                 << "4. THURSDAY" << endl
+                 << "5. FRIDAY" << endl
+                 << "6. SATURDAY" << endl
+                 << "7. SUNDAY" << endl;
+            cin >> choiceD;
+            cin.ignore();
+            if (choiceD == 1)
+            {
+                sessionDay = Day::MONDAY;
+            }
+            else if (choiceD == 2)
+            {
+                sessionDay = Day::TUESDAY;
+            }
+            else if (choiceD == 3)
+            {
+                sessionDay = Day::WEDNESDAY;
+            }
+            else if (choiceD == 4)
+            {
+                sessionDay = Day::THURSDAY;
+            }
+            else if (choiceD == 5)
+            {
+                sessionDay = Day::FRIDAY;
+            }
+            else if (choiceD == 6)
+            {
+                sessionDay = Day::SATURDAY;
+            }
+            else if (choiceD == 7)
+            {
+                sessionDay = Day::SUNDAY;
+            }
+            else
+            {
+                cout << "Invalid Choice!" << endl;
+            }
+            if (studentPtr == nullptr || timeTablePtr == nullptr)
+            {
+                cout << "Please set uo your Profile and Timetable first " << endl;
+            }
+            else
+            {
+                BagManager manager(timeTablePtr, studentPtr);
+                bagPtr = new Bag(manager.generatebagForDay(sessionDay));
+                bagPtr->display();
+                vector<string> alerts = manager.getAlertsForDay(sessionDay);
+                for (string a : alerts)
+                {
+                    cout << a << endl;
+                }
+            }
+
             break;
+        }
         case 4:
-            cout << "Option 4 is Selected" << endl;
+        {
+            if (bagPtr == nullptr)
+            {
+                cout << "Please view today's bag first (option 3) before marking items packed!";
+            }
+            else
+            {
+                for (Item i : bagPtr->getAllItems())
+                {
+                    cout << i << endl;
+                }
+                string itemNametoMark;
+            }
             break;
+        }
+
         case 5:
             cout << "Option 5 is Selected" << endl;
             return 0;
