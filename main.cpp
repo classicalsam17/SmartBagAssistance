@@ -707,13 +707,17 @@ int main()
                 {
                     cout << i << endl;
                 }
+                cin.ignore();
                 string itemNametoMark;
+                cout << "Enter the name of the item to mark as packed: " << endl;
+                getline(cin, itemNametoMark);
+                bagPtr->marksItemPacked(itemNametoMark);
             }
             break;
         }
 
         case 5:
-            cout << "Option 5 is Selected" << endl;
+            cout << "Program successfully Ended!" << endl;
             return 0;
         }
     }
