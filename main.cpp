@@ -495,9 +495,22 @@ public:
     }
     void display()
     {
+        cout << left
+             << setw(5) << "No."
+             << setw(25) << "Item Name"
+             << setw(15) << "Category"
+             << setw(12) << "Status"
+             << endl;
+        cout << string(57, '-') << endl;
+        int itemNo = 1;
         for (Item i : items)
         {
-            cout << i << endl;
+            cout << left
+                 << setw(5) << (to_string(itemNo++) + ".")
+                 << setw(25) << i.getname()
+                 << setw(15) << i.getcategory()
+                 << setw(12) << (i.isitempacked() ? "Packed" : "Not Packed")
+                 << endl;
         }
     }
 };
@@ -816,11 +829,12 @@ string getBranchName(Branch b)
 int showLoginPage()
 {
     int Choice;
-    cout << "Login Page" << endl;
+    cout << endl;
+    cout << "===== LOGIN PAGE =====" << endl;
     cout << "Enter your Choice: " << endl;
-    cout << "1. New User" << endl
-         << "2. Existing User" << endl
-         << "3. Exit" << endl;
+    cout << right << setw(2) << 1 << ". New User" << endl
+         << right << setw(2) << 2 << ". Existing User" << endl
+         << right << setw(2) << 3 << ". Exit" << endl;
     if (!readInt(Choice))
     {
         cout << "Invalid input! Please enter a number." << endl;
@@ -1721,11 +1735,12 @@ bool editProfile(Student *studentPtr, TimeTable *timeTablePtr, FileHandler &file
 void editTimetable(TimeTable *timeTablePtr, FileHandler &fileHandler, Student *studentPtr)
 {
     int choice;
-    cout << "EDIT TIMETABLE" << endl;
-    cout << "1. Add Session" << endl;
-    cout << "2. Delete Session" << endl;
-    cout << "3. View Timetable" << endl;
-    cout << "4. Back" << endl;
+    cout << endl;
+    cout << "===== EDIT TIMETABLE =====" << endl;
+    cout << right << setw(2) << 1 << ". Add Session" << endl;
+    cout << right << setw(2) << 2 << ". Delete Session" << endl;
+    cout << right << setw(2) << 3 << ". View Timetable" << endl;
+    cout << right << setw(2) << 4 << ". Back" << endl;
     cout << "Enter your choice: ";
     if (!readInt(choice))
     {
@@ -1737,19 +1752,16 @@ void editTimetable(TimeTable *timeTablePtr, FileHandler &fileHandler, Student *s
     case 1:
     {
         bool result = setupTimeTable(timeTablePtr, studentPtr);
-
         if (result)
         {
             fileHandler.saveTimeTable(timeTablePtr, studentPtr);
             cout << "Session Added Successfully!" << endl;
         }
-
         break;
     }
     case 2: // Delete Session
     {
         int dayChoice;
-
         cout << "Select Day:" << endl;
         cout << "1. Monday" << endl;
         cout << "2. Tuesday" << endl;
@@ -1764,9 +1776,7 @@ void editTimetable(TimeTable *timeTablePtr, FileHandler &fileHandler, Student *s
             cout << "Invalid input! Please enter a number." << endl;
             break;
         }
-
         Day selectedDay;
-
         if (dayChoice == 1)
             selectedDay = Day::MONDAY;
         else if (dayChoice == 2)
@@ -1786,28 +1796,31 @@ void editTimetable(TimeTable *timeTablePtr, FileHandler &fileHandler, Student *s
             cout << "Invalid Day Choice!" << endl;
             break;
         }
-
         vector<Session *> sessions =
             timeTablePtr->getSessionForDay(selectedDay);
-
         if (sessions.empty())
         {
             cout << "No sessions found for this day." << endl;
             break;
         }
-
         cout << endl;
         cout << "Sessions for selected day:" << endl;
-
+        cout << left
+             << setw(5) << "No."
+             << setw(25) << "Subject"
+             << setw(12) << "Time"
+             << setw(10) << "Room"
+             << endl;
+        cout << string(52, '-') << endl;
         for (size_t i = 0; i < sessions.size(); i++)
         {
-            cout << i + 1 << ". "
-                 << sessions[i]->getSubjectName()
-                 << " | " << sessions[i]->getStartTime()
-                 << " | Room: " << sessions[i]->getRoomNumber()
+            cout << left
+                 << setw(5) << (to_string(i + 1) + ".")
+                 << setw(25) << sessions[i]->getSubjectName()
+                 << setw(12) << sessions[i]->getStartTime()
+                 << setw(10) << sessions[i]->getRoomNumber()
                  << endl;
         }
-
         int sessionChoice;
         cout << "Enter Session Number to Delete: ";
         if (!readInt(sessionChoice))
@@ -1815,23 +1828,17 @@ void editTimetable(TimeTable *timeTablePtr, FileHandler &fileHandler, Student *s
             cout << "Invalid input! Please enter a number." << endl;
             break;
         }
-
         if (sessionChoice < 1 || static_cast<size_t>(sessionChoice) > sessions.size())
         {
             cout << "Invalid Session Choice!" << endl;
             break;
         }
-
         timeTablePtr->deleteSession(
             selectedDay, sessionChoice - 1);
-
         fileHandler.saveTimeTable(timeTablePtr, studentPtr);
-
         cout << "Session Deleted Successfully!" << endl;
-
         break;
     }
-
     case 3:
     {
         if (timeTablePtr == nullptr)
@@ -1866,13 +1873,11 @@ void showBagForDay(TimeTable *timeTablePtr, Student *studentPtr, Bag *&bagPtr)
         cout << "Invalid input! Please enter numbers only." << endl;
         return;
     }
-
     if (!isValidDate(day, month, year))
     {
         cout << "Invalid Date!" << endl;
         return;
     }
-
     Day sessionDay = getDayFromDate(day, month, year);
     string dayName;
     switch (sessionDay)
@@ -1909,9 +1914,10 @@ void showBagForDay(TimeTable *timeTablePtr, Student *studentPtr, Bag *&bagPtr)
     cout << endl;
     vector<string> alerts = manager.getAlertsForDay(sessionDay);
     cout << "===== SESSION ALERTS =====" << endl;
+    int alertNo = 1;
     for (string a : alerts)
     {
-        cout << a << endl;
+        cout << right << setw(2) << alertNo++ << ". " << a << endl;
     }
 }
 void markItemPacked(Bag *bagPtr)
@@ -1926,7 +1932,6 @@ void markItemPacked(Bag *bagPtr)
     cin.ignore();
     getline(cin, itemName);
     int result = bagPtr->marksItemPacked(itemName);
-
     if (result == 1)
         cout << "Item marked as Packed!" << endl;
     else if (result == 2)
@@ -1950,7 +1955,6 @@ void addItemToBag(Bag *bagPtr)
     getline(cin, category);
     Item newItem(itemName, category);
     bool result = bagPtr->addItem(newItem);
-
     if (result)
         cout << "Item Added To Bag Successfully!" << endl;
     else
@@ -1965,85 +1969,67 @@ void showProfile(Student *studentPtr)
     }
     cout << endl;
     cout << "===== STUDENT PROFILE =====" << endl;
-    cout << "Name            : " << studentPtr->getname() << endl;
-    cout << "Roll Number     : " << studentPtr->getRollNumber() << endl;
-    cout << "Branch          : " << getBranchName(studentPtr->getBranch()) << endl;
-    cout << "Practical Batch : " << studentPtr->getPracticalBatch() << endl;
-    cout << "Semester        : " << studentPtr->getSemester() << endl;
+    cout << left << setw(16) << "Name" << " : " << studentPtr->getname() << endl;
+    cout << left << setw(16) << "Roll Number" << " : " << studentPtr->getRollNumber() << endl;
+    cout << left << setw(16) << "Branch" << " : " << getBranchName(studentPtr->getBranch()) << endl;
+    cout << left << setw(16) << "Practical Batch" << " : " << studentPtr->getPracticalBatch() << endl;
+    cout << left << setw(16) << "Semester" << " : " << studentPtr->getSemester() << endl;
 }
 int main()
 {
     FileHandler fileHandeler;
-
     while (true)
     {
         Student *studentPtr = nullptr;
         TimeTable *timeTablePtr = nullptr;
         Bag *bagPtr = nullptr;
-
         int loginChoice = showLoginPage();
-
-        // LOGIN PAGE
-        switch (loginChoice)
+        switch (loginChoice) // LOGIN PAGE
         {
         case 1:
         {
             cout << "New User" << endl;
-
             setupProfile(studentPtr, fileHandeler);
             if (studentPtr == nullptr)
             {
                 cout << "Profile setup failed." << endl;
                 continue;
             }
-
             bool timetableResult = setupTimeTable(timeTablePtr, studentPtr);
-
             if (!timetableResult)
             {
                 cout << "Timetable setup failed." << endl;
-
                 delete studentPtr;
                 studentPtr = nullptr;
-
                 delete timeTablePtr;
                 timeTablePtr = nullptr;
-
                 continue;
             }
-
             fileHandeler.saveStudent(studentPtr);
             fileHandeler.saveTimeTable(timeTablePtr, studentPtr);
-
             cout << "New User Setup Completed Successfully!" << endl;
             break;
         }
-
         case 2:
         {
             cout << "Existing User" << endl;
-
             int branchChoice;
-
-            cout << "Select Your Branch:" << endl;
-            cout << "1. Computer Engineering" << endl;
-            cout << "2. Computer Technology" << endl;
-            cout << "3. Electronics And Telecommunication" << endl;
-            cout << "4. Electrical Engineering" << endl;
-            cout << "5. Mechanical Engineering" << endl;
-            cout << "6. Instrumentation Engineering" << endl;
-            cout << "7. Production Engineering" << endl;
-            cout << "8. Civil Engineering" << endl;
-
+            cout << "Select Your Branch:" << endl
+                 << "1. Computer Engineering" << endl
+                 << "2. Computer Technology" << endl
+                 << "3. Electronics And Telecommunication" << endl
+                 << "4. Electrical Engineering" << endl
+                 << "5. Mechanical Engineering" << endl
+                 << "6. Instrumentation Engineering" << endl
+                 << "7. Production Engineering" << endl
+                 << "8. Civil Engineering" << endl;
             cout << "Enter Branch Choice: ";
             if (!readInt(branchChoice))
             {
                 cout << "Invalid input! Please enter a number." << endl;
                 continue;
             }
-
             Branch selectedBranch;
-
             if (branchChoice == 1)
                 selectedBranch = Branch::CO;
             else if (branchChoice == 2)
@@ -2065,91 +2051,71 @@ int main()
                 cout << "Invalid Branch Choice!" << endl;
                 continue;
             }
-
             string rollNumber;
-
             cout << "Enter Roll Number: ";
             cin >> rollNumber;
-
             string branchCode = getBranchCode(selectedBranch);
-
             try
             {
                 studentPtr = fileHandeler.loadStudent(branchCode, rollNumber);
-
                 timeTablePtr = new TimeTable();
-
                 fileHandeler.loadTimeTable(
                     timeTablePtr,
                     branchCode,
                     rollNumber);
-
                 cout << "Login Successful!" << endl;
                 cout << "Welcome, " << studentPtr->getname() << "!" << endl;
             }
             catch (const FileNotFoundException &e)
             {
                 cout << e.what() << endl;
-
                 delete studentPtr;
                 studentPtr = nullptr;
-
                 delete timeTablePtr;
                 timeTablePtr = nullptr;
-
                 continue;
             }
-
             break;
         }
         case 3:
             cout << "Exited!!" << endl;
             return 0;
-
         default:
             cout << "Invalid choice" << endl;
             continue;
         }
-
-        // MAIN MENU
-        while (true)
+        while (true) // MAIN MENU
         {
             cout << endl;
             cout << "===== SMART BAG MENU =====" << endl;
-
-            cout << "1. Edit Profile" << endl
-                 << "2. Edit Timetable" << endl
-                 << "3. Show Today's Bag" << endl
-                 << "4. Mark Item Packed" << endl
-                 << "5. Add Item To Bag" << endl
-                 << "6. Show Profile" << endl
-                 << "7. Show Timetable" << endl
-                 << "8. Save Data" << endl
-                 << "9. Logout" << endl
-                 << "10. EXIT" << endl;
-
+            cout << right << setw(2) << 1 << ". Edit Profile" << endl
+                 << right << setw(2) << 2 << ". Edit Timetable" << endl
+                 << right << setw(2) << 3 << ". Show Today's Bag" << endl
+                 << right << setw(2) << 4 << ". Mark Item Packed" << endl
+                 << right << setw(2) << 5 << ". Add Item To Bag" << endl
+                 << right << setw(2) << 6 << ". Show Profile" << endl
+                 << right << setw(2) << 7 << ". Show Timetable" << endl
+                 << right << setw(2) << 8 << ". Save Data" << endl
+                 << right << setw(2) << 9 << ". Logout" << endl
+                 << right << setw(2) << 10 << ". EXIT" << endl;
             cout << "Enter Your Choice: ";
-
             int choice;
             if (!readInt(choice))
             {
                 cout << "Invalid input! Please enter a number." << endl;
                 continue;
             }
-
             switch (choice)
             {
             case 1:
             {
                 bool result = editProfile(studentPtr, timeTablePtr, fileHandeler);
-
                 if (result)
                 {
                     fileHandeler.saveStudent(studentPtr);
                     fileHandeler.saveTimeTable(timeTablePtr, studentPtr);
                     cout << "Profile Saved Successfully!" << endl;
                 }
-
                 break;
             }
             case 2:
@@ -2157,31 +2123,26 @@ int main()
                 editTimetable(timeTablePtr, fileHandeler, studentPtr);
                 break;
             }
-
             case 3:
             {
                 showBagForDay(timeTablePtr, studentPtr, bagPtr);
                 break;
             }
-
             case 4:
             {
                 markItemPacked(bagPtr);
                 break;
             }
-
             case 5:
             {
                 addItemToBag(bagPtr);
                 break;
             }
-
             case 6:
             {
                 showProfile(studentPtr);
                 break;
             }
-
             case 7:
             {
                 if (timeTablePtr == nullptr)
@@ -2194,10 +2155,8 @@ int main()
                     cout << "===== YOUR TIMETABLE =====" << endl;
                     timeTablePtr->display();
                 }
-
                 break;
             }
-
             case 8:
             {
                 if (studentPtr == nullptr || timeTablePtr == nullptr)
@@ -2208,64 +2167,45 @@ int main()
                 {
                     fileHandeler.saveStudent(studentPtr);
                     fileHandeler.saveTimeTable(timeTablePtr, studentPtr);
-
                     cout << "All Data Saved Successfully!" << endl;
                 }
-
                 break;
             }
-
             case 9:
             {
                 cout << "Logging Out..." << endl;
-
                 delete bagPtr;
                 bagPtr = nullptr;
-
                 delete timeTablePtr;
                 timeTablePtr = nullptr;
-
                 delete studentPtr;
                 studentPtr = nullptr;
-
                 cout << "Logged Out Successfully!" << endl;
-
-                // Go back to Login Page
-                break;
+                break; // Go back to Login Page
             }
-
             case 10:
             {
                 cout << "Exiting Smart Bag..." << endl;
-
                 delete bagPtr;
                 bagPtr = nullptr;
-
                 delete timeTablePtr;
                 timeTablePtr = nullptr;
-
                 delete studentPtr;
                 studentPtr = nullptr;
-
                 cout << "Thank You for using Smart Bag!" << endl;
-
                 return 0;
             }
-
             default:
             {
                 cout << "Invalid Choice!" << endl;
                 break;
             }
             }
-
-            // Exit main menu after Logout
             if (choice == 9)
             {
                 break;
-            }
+            } // Exit main menu after Logout
         }
     }
-
     return 0;
 }
