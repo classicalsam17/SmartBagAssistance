@@ -11,7 +11,24 @@
 #include <algorithm>
 #include <cstdio>
 #include <cctype>
+#include <limits>
 using namespace std;
+
+// Safely reads an int from cin. If the user types something that
+// is not a number, this clears cin's fail state and discards the
+// bad input, and returns false instead of leaving cin permanently
+// broken (which would otherwise make every later cin >> fail too).
+bool readInt(int &value)
+{
+    cin >> value;
+    if (cin.fail())
+    {
+        cin.clear();
+        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+        return false;
+    }
+    return true;
+}
 // Section 1 : Enum
 enum class Branch
 {
@@ -81,6 +98,15 @@ public:
     bool operator==(const Item &);
     friend ostream &operator<<(ostream &, const Item &);
 };
+bool Item::operator==(const Item &other)
+{
+    // Same equality rule already used for duplicate detection in Bag::addItem:
+    // items are "equal" if they have the same name, case-insensitively.
+    string a = name, b = other.name;
+    transform(a.begin(), a.end(), a.begin(), ::tolower);
+    transform(b.begin(), b.end(), b.begin(), ::tolower);
+    return a == b;
+}
 ostream &operator<<(ostream &os, const Item &item)
 {
     os << item.getname() << "(" << item.getcategory() << ") - ";
@@ -118,11 +144,11 @@ public:
     virtual vector<Item> getItemToCarry() = 0;
     virtual string getAlertMessage() = 0;
     virtual SessionType getType() = 0;
-    Day getDay() { return day; }
-    string getStartTime() { return startTime; }
-    string getSubjectName() { return subjectName; }
-    string getRoomNumber() { return roomNumber; }
-    string getProfessorName() { return professorName; }
+    Day getDay() const { return day; }
+    string getStartTime() const { return startTime; }
+    string getSubjectName() const { return subjectName; }
+    string getRoomNumber() const { return roomNumber; }
+    string getProfessorName() const { return professorName; }
     virtual void display() = 0;
 };
 // Inheritace and Polymorphism
@@ -182,7 +208,7 @@ public:
     {
         return SessionType::PRACTICAL;
     }
-    string getPracticalBatch()
+    string getPracticalBatch() const
     {
         return practicalBatch;
     }
@@ -196,7 +222,7 @@ public:
              << "Time: " << startTime << endl
              << "Room: " << roomNumber << endl;
     }
-    int getAlertLeadMinutes()
+    int getAlertLeadMinutes() const
     {
         return alertLeadMinutes;
     }
@@ -221,23 +247,23 @@ public:
         this->practicalBatch = SpracticalBatch;
         this->semester = Ssemester;
     }
-    string getname()
+    string getname() const
     {
         return name;
     }
-    string getRollNumber()
+    string getRollNumber() const
     {
         return rollnumber;
     }
-    Branch getBranch()
+    Branch getBranch() const
     {
         return branch;
     }
-    string getPracticalBatch()
+    string getPracticalBatch() const
     {
         return practicalBatch;
     }
-    int getSemester()
+    int getSemester() const
     {
         return semester;
     }
@@ -263,6 +289,14 @@ public:
     }
     friend ostream &operator<<(ostream &, const Student &);
 };
+ostream &operator<<(ostream &os, const Student &student)
+{
+    os << "Name            : " << student.name << endl;
+    os << "Roll Number     : " << student.rollnumber << endl;
+    os << "Practical Batch : " << student.practicalBatch << endl;
+    os << "Semester        : " << student.semester << endl;
+    return os;
+}
 // Section:6 Time table ; uses Session*
 //  Composition
 //  the map's subscript operator, map indexing map access operator to be used
@@ -296,7 +330,7 @@ public:
 
         vector<Session *> &sessions = weekSchedule[day];
 
-        if (index < 0 || index >= sessions.size())
+        if (index < 0 || static_cast<size_t>(index) >= sessions.size())
             return;
 
         delete sessions[index];
@@ -304,7 +338,7 @@ public:
     }
     void updatePracticalBatch(string newBatch)
     {
-        for (pair<Day, vector<Session *>> entry : weekSchedule)
+        for (pair<const Day, vector<Session *>> &entry : weekSchedule)
         {
             for (Session *s : entry.second)
             {
@@ -320,7 +354,12 @@ public:
     }
     vector<Session *> getSessionForDay(Day day)
     {
-        return weekSchedule[day];
+        auto it = weekSchedule.find(day);
+        if (it == weekSchedule.end())
+        {
+            return vector<Session *>(); // no sessions for this day; map stays untouched
+        }
+        return it->second;
     }
     void display()
     {
@@ -334,7 +373,7 @@ public:
              << setw(20) << "Professor"
              << endl;
         cout << string(111, '-') << endl;
-        for (pair<Day, vector<Session *>> entry : weekSchedule)
+        for (const pair<const Day, vector<Session *>> &entry : weekSchedule)
         {
             string dayName;
             switch (entry.first)
@@ -557,6 +596,30 @@ public:
         return message.c_str();
     }
 };
+string getBranchCode(Branch branch)
+{
+    switch (branch)
+    {
+    case Branch::CO:
+        return "CO";
+    case Branch::CM:
+        return "CM";
+    case Branch::EJ:
+        return "EJ";
+    case Branch::EE:
+        return "EE";
+    case Branch::ME:
+        return "ME";
+    case Branch::IS:
+        return "IS";
+    case Branch::PG:
+        return "PG";
+    case Branch::CE:
+        return "CE";
+    default:
+        return "";
+    }
+}
 // File Handling
 class FileHandler
 {
@@ -612,7 +675,7 @@ public:
             throw FileNotFoundException("Unable to Open TimeTable File!");
         }
         map<Day, vector<Session *>> allSessions = timeTablePtr->getAllSessions();
-        for (pair<Day, vector<Session *>> entry : allSessions)
+        for (const pair<const Day, vector<Session *>> &entry : allSessions)
         {
             for (Session *s : entry.second)
             {
@@ -758,7 +821,11 @@ int showLoginPage()
     cout << "1. New User" << endl
          << "2. Existing User" << endl
          << "3. Exit" << endl;
-    cin >> Choice;
+    if (!readInt(Choice))
+    {
+        cout << "Invalid input! Please enter a number." << endl;
+        return -1;
+    }
     return Choice;
 }
 Day getDayFromDate(int day, int month, int year)
@@ -788,30 +855,7 @@ bool isValidDate(int day, int month, int year)
 
     return true;
 }
-string getBranchCode(Branch branch)
-{
-    switch (branch)
-    {
-    case Branch::CO:
-        return "CO";
-    case Branch::CM:
-        return "CM";
-    case Branch::EJ:
-        return "EJ";
-    case Branch::EE:
-        return "EE";
-    case Branch::ME:
-        return "ME";
-    case Branch::IS:
-        return "IS";
-    case Branch::PG:
-        return "PG";
-    case Branch::CE:
-        return "CE";
-    default:
-        return "";
-    }
-}
+
 string getPracticalBatch(Branch branch)
 {
     string branchCode = getBranchCode(branch);
@@ -822,7 +866,10 @@ string getPracticalBatch(Branch branch)
     cout << "3. " << branchCode << "3" << endl;
     int choice;
     cout << "Enter Batch Choice: ";
-    cin >> choice;
+    if (!readInt(choice))
+    {
+        throw InvalidSessionDataException("Invalid Practical Batch!");
+    }
     if (choice >= 1 && choice <= 3)
     {
         return branchCode + to_string(choice);
@@ -856,6 +903,22 @@ void setupProfile(Student *&studentPtr, FileHandler &fileHandeler)
             return;
         }
     }
+    bool onlySpacesName = true;
+
+    for (char c : name)
+    {
+        if (!isspace(c))
+        {
+            onlySpacesName = false;
+            break;
+        }
+    }
+
+    if (onlySpacesName)
+    {
+        cout << "Name cannot contain only spaces!" << endl;
+        return;
+    }
     for (char c : rollnumber)
     {
         if (!isdigit(c))
@@ -875,7 +938,11 @@ void setupProfile(Student *&studentPtr, FileHandler &fileHandeler)
     cout << "8. Civil Engineering" << endl;
     int choiceB;
     cout << "Enter Branch Choice: ";
-    cin >> choiceB;
+    if (!readInt(choiceB))
+    {
+        cout << "Invalid input! Please enter a number." << endl;
+        return;
+    }
     Branch selectedBranch;
     if (choiceB == 1)
         selectedBranch = Branch::CO;
@@ -911,7 +978,11 @@ void setupProfile(Student *&studentPtr, FileHandler &fileHandeler)
     cout << "3. " << branchCode << "3" << endl;
     int batchChoice;
     cout << "Enter Batch Choice: ";
-    cin >> batchChoice;
+    if (!readInt(batchChoice))
+    {
+        cout << "Invalid input! Please enter a number." << endl;
+        return;
+    }
     string practicalBatch;
     if (batchChoice == 1)
         practicalBatch = branchCode + "1";
@@ -926,7 +997,11 @@ void setupProfile(Student *&studentPtr, FileHandler &fileHandeler)
     }
     int semester;
     cout << "Enter Your Current Semester: 1/2/3/4/5/6" << endl;
-    cin >> semester;
+    if (!readInt(semester))
+    {
+        cout << "Invalid input! Please enter a number." << endl;
+        return;
+    }
     if (semester < 1 || semester > 6)
     {
         cout << "Invalid Semester!" << endl;
@@ -957,7 +1032,11 @@ bool setupTimeTable(TimeTable *&timeTablePtr, Student *studentPtr)
          << "6. SATURDAY" << endl
          << "7. SUNDAY" << endl;
     Day sessionDay;
-    cin >> choiceD;
+    if (!readInt(choiceD))
+    {
+        cout << "Invalid input! Please enter a number." << endl;
+        return false;
+    }
     if (choiceD == 1)
     {
         sessionDay = Day::MONDAY;
@@ -993,7 +1072,11 @@ bool setupTimeTable(TimeTable *&timeTablePtr, Student *studentPtr)
     }
     int typeChoice;
     cout << "Enter Choice for 1. Lecture / 2. Practical: " << endl;
-    cin >> typeChoice;
+    if (!readInt(typeChoice))
+    {
+        cout << "Invalid input! Please enter a number." << endl;
+        return false;
+    }
     if (typeChoice == 1)
     {
         string subjectName;
@@ -1005,18 +1088,18 @@ bool setupTimeTable(TimeTable *&timeTablePtr, Student *studentPtr)
             cout << "Subject Name cannot be empty!" << endl;
             return false;
         }
-        bool onlySpaces = true;
+        bool onlySpacesSubject = true;
 
         for (char c : subjectName)
         {
             if (!isspace(c))
             {
-                onlySpaces = false;
+                onlySpacesSubject = false;
                 break;
             }
         }
 
-        if (onlySpaces)
+        if (onlySpacesSubject)
         {
             cout << "Subject Name cannot contain only spaces!" << endl;
             return false;
@@ -1029,18 +1112,18 @@ bool setupTimeTable(TimeTable *&timeTablePtr, Student *studentPtr)
             cout << "Start Time cannot be empty!" << endl;
             return false;
         }
-        bool onlySpaces = true;
+        bool onlySpacesTime = true;
 
         for (char c : startTime)
         {
             if (!isspace(c))
             {
-                onlySpaces = false;
+                onlySpacesTime = false;
                 break;
             }
         }
 
-        if (onlySpaces)
+        if (onlySpacesTime)
         {
             cout << "Start Time cannot contain only spaces!" << endl;
             return false;
@@ -1053,18 +1136,18 @@ bool setupTimeTable(TimeTable *&timeTablePtr, Student *studentPtr)
             cout << "Room Number cannot be empty!" << endl;
             return false;
         }
-        bool onlySpaces = true;
+        bool onlySpacesRoom = true;
 
         for (char c : roomNumber)
         {
             if (!isspace(c))
             {
-                onlySpaces = false;
+                onlySpacesRoom = false;
                 break;
             }
         }
 
-        if (onlySpaces)
+        if (onlySpacesRoom)
         {
             cout << "Room Number cannot contain only spaces!" << endl;
             return false;
@@ -1077,18 +1160,18 @@ bool setupTimeTable(TimeTable *&timeTablePtr, Student *studentPtr)
             cout << "Professor Name cannot be empty!" << endl;
             return false;
         }
-        bool onlySpaces = true;
+        bool onlySpacesProf = true;
 
         for (char c : professorName)
         {
             if (!isspace(c))
             {
-                onlySpaces = false;
+                onlySpacesProf = false;
                 break;
             }
         }
 
-        if (onlySpaces)
+        if (onlySpacesProf)
         {
             cout << "Professor Name cannot contain only spaces!" << endl;
             return false;
@@ -1097,30 +1180,17 @@ bool setupTimeTable(TimeTable *&timeTablePtr, Student *studentPtr)
         cout << "How many Items you want to add?" << endl;
         int itemCount;
         cout << "Enter Number of Items: ";
-        cin >> itemCount;
+        if (!readInt(itemCount))
+        {
+            cout << "Invalid input! Please enter a number." << endl;
+            return false;
+        }
 
         if (itemCount < 0)
         {
             cout << "Invalid Number of Items!" << endl;
             return false;
         }
-        bool onlySpaces = true;
-
-        for (char c : itemName)
-        {
-            if (!isspace(c))
-            {
-                onlySpaces = false;
-                break;
-            }
-        }
-
-        if (onlySpaces)
-        {
-            cout << "Item Name cannot contain only spaces!" << endl;
-            return false;
-        }
-
         cin.ignore();
         for (int i = 0; i < itemCount; i++)
         {
@@ -1132,18 +1202,18 @@ bool setupTimeTable(TimeTable *&timeTablePtr, Student *studentPtr)
                 cout << "Item Name cannot be empty!" << endl;
                 return false;
             }
-            bool onlySpaces = true;
+            bool onlySpacesItemName = true;
 
             for (char c : itemName)
             {
                 if (!isspace(c))
                 {
-                    onlySpaces = false;
+                    onlySpacesItemName = false;
                     break;
                 }
             }
 
-            if (onlySpaces)
+            if (onlySpacesItemName)
             {
                 cout << "Item Name cannot contain only spaces!" << endl;
                 return false;
@@ -1157,18 +1227,18 @@ bool setupTimeTable(TimeTable *&timeTablePtr, Student *studentPtr)
                 cout << "Item Category cannot be empty!" << endl;
                 return false;
             }
-            bool onlySpaces = true;
+            bool onlySpacesItemCategory = true;
 
             for (char c : itemCategory)
             {
                 if (!isspace(c))
                 {
-                    onlySpaces = false;
+                    onlySpacesItemCategory = false;
                     break;
                 }
             }
 
-            if (onlySpaces)
+            if (onlySpacesItemCategory)
             {
                 cout << "Item Category cannot contain only spaces!" << endl;
                 return false;
@@ -1191,7 +1261,11 @@ bool setupTimeTable(TimeTable *&timeTablePtr, Student *studentPtr)
         cout << "3. " << branchCode << "3" << endl;
         int batchChoice;
         cout << "Enter Batch Choice: ";
-        cin >> batchChoice;
+        if (!readInt(batchChoice))
+        {
+            cout << "Invalid input! Please enter a number." << endl;
+            return false;
+        }
         if (batchChoice == 1)
             practicalBatch = branchCode + "1";
         else if (batchChoice == 2)
@@ -1211,18 +1285,18 @@ bool setupTimeTable(TimeTable *&timeTablePtr, Student *studentPtr)
             cout << "Subject Name cannot be empty!" << endl;
             return false;
         }
-        bool onlySpaces = true;
+        bool onlySpacesPracticalSubject = true;
 
         for (char c : subjectName)
         {
             if (!isspace(c))
             {
-                onlySpaces = false;
+                onlySpacesPracticalSubject = false;
                 break;
             }
         }
 
-        if (onlySpaces)
+        if (onlySpacesPracticalSubject)
         {
             cout << "Subject Name cannot contain only spaces!" << endl;
             return false;
@@ -1235,18 +1309,18 @@ bool setupTimeTable(TimeTable *&timeTablePtr, Student *studentPtr)
             cout << "Start Time cannot be empty!" << endl;
             return false;
         }
-        bool onlySpaces = true;
+        bool onlySpacesPracticalStartTime = true;
 
         for (char c : startTime)
         {
             if (!isspace(c))
             {
-                onlySpaces = false;
+                onlySpacesPracticalStartTime = false;
                 break;
             }
         }
 
-        if (onlySpaces)
+        if (onlySpacesPracticalStartTime)
         {
             cout << "Start Time cannot contain only spaces!" << endl;
             return false;
@@ -1259,18 +1333,18 @@ bool setupTimeTable(TimeTable *&timeTablePtr, Student *studentPtr)
             cout << "Room Number cannot be empty!" << endl;
             return false;
         }
-        bool onlySpaces = true;
+        bool onlySpacesPracticalRoomNumber = true;
 
         for (char c : roomNumber)
         {
             if (!isspace(c))
             {
-                onlySpaces = false;
+                onlySpacesPracticalRoomNumber = false;
                 break;
             }
         }
 
-        if (onlySpaces)
+        if (onlySpacesPracticalRoomNumber)
         {
             cout << "Room Number cannot contain only spaces!" << endl;
             return false;
@@ -1283,18 +1357,18 @@ bool setupTimeTable(TimeTable *&timeTablePtr, Student *studentPtr)
             cout << "Professor Name cannot be empty!" << endl;
             return false;
         }
-        bool onlySpaces = true;
+        bool onlySpacesPracticalProfName = true;
 
         for (char c : professorName)
         {
             if (!isspace(c))
             {
-                onlySpaces = false;
+                onlySpacesPracticalProfName = false;
                 break;
             }
         }
 
-        if (onlySpaces)
+        if (onlySpacesPracticalProfName)
         {
             cout << "Professor Name cannot contain only spaces!" << endl;
             return false;
@@ -1303,7 +1377,11 @@ bool setupTimeTable(TimeTable *&timeTablePtr, Student *studentPtr)
         cout << "How many Items you want to add? " << endl;
         int itemCount;
         cout << "Enter Number of Items: ";
-        cin >> itemCount;
+        if (!readInt(itemCount))
+        {
+            cout << "Invalid input! Please enter a number." << endl;
+            return false;
+        }
 
         if (itemCount < 0)
         {
@@ -1322,18 +1400,18 @@ bool setupTimeTable(TimeTable *&timeTablePtr, Student *studentPtr)
                 cout << "Lab Item Name cannot be empty!" << endl;
                 return false;
             }
-            bool onlySpaces = true;
+            bool onlySpacesPracticalItemName = true;
 
             for (char c : labItemName)
             {
                 if (!isspace(c))
                 {
-                    onlySpaces = false;
+                    onlySpacesPracticalItemName = false;
                     break;
                 }
             }
 
-            if (onlySpaces)
+            if (onlySpacesPracticalItemName)
             {
                 cout << "Lab Item Name cannot contain only spaces!" << endl;
                 return false;
@@ -1346,18 +1424,18 @@ bool setupTimeTable(TimeTable *&timeTablePtr, Student *studentPtr)
                 cout << "Lab Item Category cannot be empty!" << endl;
                 return false;
             }
-            bool onlySpaces = true;
+            bool onlySpacesPracticalItemCategory = true;
 
             for (char c : labItemCategory)
             {
                 if (!isspace(c))
                 {
-                    onlySpaces = false;
+                    onlySpacesPracticalItemCategory = false;
                     break;
                 }
             }
 
-            if (onlySpaces)
+            if (onlySpacesPracticalItemCategory)
             {
                 cout << "Lab Item Category cannot contain only spaces!" << endl;
                 return false;
@@ -1367,7 +1445,11 @@ bool setupTimeTable(TimeTable *&timeTablePtr, Student *studentPtr)
         }
         int alertLeadMinutes;
         cout << "Enter Alert Lead Minutes: " << endl;
-        cin >> alertLeadMinutes;
+        if (!readInt(alertLeadMinutes))
+        {
+            cout << "Invalid input! Please enter a number." << endl;
+            return false;
+        }
 
         if (alertLeadMinutes < 0)
         {
@@ -1384,7 +1466,7 @@ bool setupTimeTable(TimeTable *&timeTablePtr, Student *studentPtr)
     }
     return true;
 }
-void editProfile(Student *studentPtr, TimeTable *timeTablePtr, FileHandler &fileHandeler)
+bool editProfile(Student *studentPtr, TimeTable *timeTablePtr, FileHandler &fileHandeler)
 {
     int choice;
     cout << "===== EDIT PROFILE =====" << endl;
@@ -1395,7 +1477,11 @@ void editProfile(Student *studentPtr, TimeTable *timeTablePtr, FileHandler &file
     cout << "5. Edit Semester" << endl;
     cout << "6. Back" << endl;
     cout << "Enter your choice: ";
-    cin >> choice;
+    if (!readInt(choice))
+    {
+        cout << "Invalid input! Please enter a number." << endl;
+        return false;
+    }
     switch (choice)
     {
     case 1:
@@ -1410,7 +1496,22 @@ void editProfile(Student *studentPtr, TimeTable *timeTablePtr, FileHandler &file
             break;
         }
         bool onlySpaces = true;
+        bool validName = true;
 
+        for (char c : newName)
+        {
+            if (!isalpha(c) && c != ' ')
+            {
+                validName = false;
+                break;
+            }
+        }
+
+        if (!validName)
+        {
+            cout << "Name can contain only letters and spaces!" << endl;
+            break;
+        }
         for (char c : newName)
         {
             if (!isspace(c))
@@ -1427,7 +1528,7 @@ void editProfile(Student *studentPtr, TimeTable *timeTablePtr, FileHandler &file
         }
         studentPtr->setName(newName);
         cout << "Name Updated Successfully!" << endl;
-        break;
+        return true;
     }
     case 2:
     {
@@ -1475,7 +1576,7 @@ void editProfile(Student *studentPtr, TimeTable *timeTablePtr, FileHandler &file
         fileHandeler.deleteStudentFiles(oldBranchCode, oldRollNumber);
 
         cout << "Roll Number Updated Successfully!" << endl;
-        break;
+        return true;
     }
     case 3:
     {
@@ -1493,7 +1594,11 @@ void editProfile(Student *studentPtr, TimeTable *timeTablePtr, FileHandler &file
         cout << "7. Production Engineering" << endl;
         cout << "8. Civil Engineering" << endl;
 
-        cin >> branchChoice;
+        if (!readInt(branchChoice))
+        {
+            cout << "Invalid input! Please enter a number." << endl;
+            break;
+        }
 
         Branch newBranch;
 
@@ -1532,17 +1637,20 @@ void editProfile(Student *studentPtr, TimeTable *timeTablePtr, FileHandler &file
             break;
         }
 
-        studentPtr->setBranch(newBranch);
+        string newPracticalBatch;
 
         try
         {
-            studentPtr->setPracticalBatch(getPracticalBatch(newBranch));
+            newPracticalBatch = getPracticalBatch(newBranch);
         }
         catch (const InvalidSessionDataException &e)
         {
             cout << e.what() << endl;
             break;
         }
+
+        studentPtr->setBranch(newBranch);
+        studentPtr->setPracticalBatch(newPracticalBatch);
         timeTablePtr->updatePracticalBatch(studentPtr->getPracticalBatch());
 
         fileHandeler.saveStudent(studentPtr);
@@ -1554,23 +1662,40 @@ void editProfile(Student *studentPtr, TimeTable *timeTablePtr, FileHandler &file
 
         cout << "Branch Updated Successfully!" << endl;
 
-        break;
+        return true;
     }
     case 4:
     {
-        string newBatch = getPracticalBatch(studentPtr->getBranch());
+        string newBatch;
+
+        try
+        {
+            newBatch = getPracticalBatch(studentPtr->getBranch());
+        }
+        catch (const InvalidSessionDataException &e)
+        {
+            cout << e.what() << endl;
+            break;
+        }
 
         studentPtr->setPracticalBatch(newBatch);
         timeTablePtr->updatePracticalBatch(newBatch);
 
+        fileHandeler.saveStudent(studentPtr);
+        fileHandeler.saveTimeTable(timeTablePtr, studentPtr);
+
         cout << "Practical Batch Updated Successfully!" << endl;
-        break;
+        return true;
     }
     case 5:
     {
         int newSemester;
         cout << "Enter New Semester (1-6): ";
-        cin >> newSemester;
+        if (!readInt(newSemester))
+        {
+            cout << "Invalid input! Please enter a number." << endl;
+            break;
+        }
 
         if (newSemester < 1 || newSemester > 6)
         {
@@ -1580,13 +1705,18 @@ void editProfile(Student *studentPtr, TimeTable *timeTablePtr, FileHandler &file
 
         studentPtr->setSemester(newSemester);
         cout << "Semester Updated Successfully!" << endl;
-        break;
+        return true;
     }
     case 6:
-        break;
+        return false;
     default:
         cout << "Invalid Choice!" << endl;
+        return false;
     }
+    // Any validation-failure "break;" above lands here.
+    // Without this, the function would fall off the end without
+    // returning a value, which is undefined behavior.
+    return false;
 }
 void editTimetable(TimeTable *timeTablePtr, FileHandler &fileHandler, Student *studentPtr)
 {
@@ -1597,7 +1727,11 @@ void editTimetable(TimeTable *timeTablePtr, FileHandler &fileHandler, Student *s
     cout << "3. View Timetable" << endl;
     cout << "4. Back" << endl;
     cout << "Enter your choice: ";
-    cin >> choice;
+    if (!readInt(choice))
+    {
+        cout << "Invalid input! Please enter a number." << endl;
+        return;
+    }
     switch (choice)
     {
     case 1:
@@ -1625,7 +1759,11 @@ void editTimetable(TimeTable *timeTablePtr, FileHandler &fileHandler, Student *s
         cout << "6. Saturday" << endl;
         cout << "7. Sunday" << endl;
         cout << "Enter Day Choice: ";
-        cin >> dayChoice;
+        if (!readInt(dayChoice))
+        {
+            cout << "Invalid input! Please enter a number." << endl;
+            break;
+        }
 
         Day selectedDay;
 
@@ -1661,7 +1799,7 @@ void editTimetable(TimeTable *timeTablePtr, FileHandler &fileHandler, Student *s
         cout << endl;
         cout << "Sessions for selected day:" << endl;
 
-        for (int i = 0; i < sessions.size(); i++)
+        for (size_t i = 0; i < sessions.size(); i++)
         {
             cout << i + 1 << ". "
                  << sessions[i]->getSubjectName()
@@ -1672,9 +1810,13 @@ void editTimetable(TimeTable *timeTablePtr, FileHandler &fileHandler, Student *s
 
         int sessionChoice;
         cout << "Enter Session Number to Delete: ";
-        cin >> sessionChoice;
+        if (!readInt(sessionChoice))
+        {
+            cout << "Invalid input! Please enter a number." << endl;
+            break;
+        }
 
-        if (sessionChoice < 1 || sessionChoice > sessions.size())
+        if (sessionChoice < 1 || static_cast<size_t>(sessionChoice) > sessions.size())
         {
             cout << "Invalid Session Choice!" << endl;
             break;
@@ -1719,7 +1861,11 @@ void showBagForDay(TimeTable *timeTablePtr, Student *studentPtr, Bag *&bagPtr)
     cout << endl;
     cout << "===== SHOW BAG =====" << endl;
     cout << "Enter Date (DD MM YYYY): ";
-    cin >> day >> month >> year;
+    if (!readInt(day) || !readInt(month) || !readInt(year))
+    {
+        cout << "Invalid input! Please enter numbers only." << endl;
+        return;
+    }
 
     if (!isValidDate(day, month, year))
     {
@@ -1860,6 +2006,9 @@ int main()
                 delete studentPtr;
                 studentPtr = nullptr;
 
+                delete timeTablePtr;
+                timeTablePtr = nullptr;
+
                 continue;
             }
 
@@ -1887,7 +2036,11 @@ int main()
             cout << "8. Civil Engineering" << endl;
 
             cout << "Enter Branch Choice: ";
-            cin >> branchChoice;
+            if (!readInt(branchChoice))
+            {
+                cout << "Invalid input! Please enter a number." << endl;
+                continue;
+            }
 
             Branch selectedBranch;
 
@@ -1978,18 +2131,27 @@ int main()
             cout << "Enter Your Choice: ";
 
             int choice;
-            cin >> choice;
+            if (!readInt(choice))
+            {
+                cout << "Invalid input! Please enter a number." << endl;
+                continue;
+            }
 
             switch (choice)
             {
             case 1:
             {
-                editProfile(studentPtr, timeTablePtr, fileHandeler);
-                fileHandeler.saveStudent(studentPtr);
-                cout << "Profile Saved Successfully!" << endl;
+                bool result = editProfile(studentPtr, timeTablePtr, fileHandeler);
+
+                if (result)
+                {
+                    fileHandeler.saveStudent(studentPtr);
+                    fileHandeler.saveTimeTable(timeTablePtr, studentPtr);
+                    cout << "Profile Saved Successfully!" << endl;
+                }
+
                 break;
             }
-
             case 2:
             {
                 editTimetable(timeTablePtr, fileHandeler, studentPtr);
